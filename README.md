@@ -109,8 +109,5 @@ A **full-stack food delivery platform** — your biggest challenge yet!
 
 ---
 
-## 📌 Final Note
 
-Keep exploring, keep building, and most importantly — have fun with code! 💡✨  
-Good luck on your web development journey with **Slash Mark Solutions**! 🙌
 
