@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>URL Shortener</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 50px;
+      background: #f8f9fa;
+    }
+    h1 {
+      color: #333;
+    }
+    input[type="text"] {
+      width: 400px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+    }
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔗 URL Shortener</h1>
+  <input type="text" id="longUrl" placeholder="Enter long URL here" />
+  <button onclick="shortenUrl()">Shorten URL</button>
+  <div id="result"></div>
+
+  <script>
+    async function shortenUrl() {
+      const longUrl = document.getElementById('longUrl').value;
+      const resultDiv = document.getElementById('result');
+
+      const res = await fetch('http://localhost:5000/api/url/shorten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ longUrl })
+      });
+
+      const data = await res.json();
+
+      if (data.shortUrl) {
+        resultDiv.innerHTML = `<p>Short URL: <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a></p>`;
+      } else {
+        resultDiv.innerHTML = `<p style="color:red;">Error: ${data.msg || 'Invalid URL'}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
