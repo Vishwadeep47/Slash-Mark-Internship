@@ -77,37 +77,5 @@ Build a **browser-based code editor** that simulates IDE functionalities.
 - Hosting Services  
 - REST API
 
----
-
-## 🔴 ADVANCED Web Development Project
-
-### 🍔 Final Task: Food Delivery Web Application
-
-A **full-stack food delivery platform** — your biggest challenge yet!
-
-#### 🎨 Frontend Features:
-- Restaurant listings  
-- Menus  
-- Order placement  
-- Tracking  
-- Reviews & notifications  
-- Built with React + advanced CSS/JS
-
-#### 🛠️ Backend Features:
-- Authentication  
-- Order management  
-- Restaurant control panel  
-- Geolocation services  
-- Database integration (users, orders, reviews, etc.)
-
-**🔧 Skills Required**:
-- React  
-- Node.js / Express.js  
-- MongoDB / SQL  
-- Full-stack development  
-- Deployment and Hosting
-
----
-
 
 
