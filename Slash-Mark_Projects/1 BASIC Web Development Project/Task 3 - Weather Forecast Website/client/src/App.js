@@ -49,95 +49,162 @@ function App() {
     });
   };
 
-  // Determine weather condition (prioritize hover, then current forecast)
-  const weatherMain = hoveredWeather || forecast?.list?.[0]?.weather?.[0]?.main;
-
+  // Helper: Get background gradient
   const getBackground = (condition) => {
     switch (condition) {
-      case 'Clear':
-        return 'linear-gradient(to bottom, #2980b9, #6dd5fa, #ffffff)'; // Sunny/Clear
-      case 'Clouds':
-        return 'linear-gradient(to bottom, #bdc3c7, #2c3e50)'; // Cloudy
+      case 'Clear': return 'linear-gradient(to bottom right, #FFD700, #ff8c00)'; // Sunny Gold
+      case 'Clouds': return 'linear-gradient(to bottom right, #bdc3c7, #2c3e50)'; // Grey
       case 'Rain':
-      case 'Drizzle':
-        return 'linear-gradient(to bottom, #000046, #1cb5e0)'; // Rainy
-      case 'Thunderstorm':
-        return 'linear-gradient(to bottom, #141E30, #243B55)'; // Stormy
-      case 'Snow':
-        return 'linear-gradient(to bottom, #83a4d4, #b6fbff)'; // Snowy
+      case 'Drizzle': return 'linear-gradient(to bottom right, #000046, #1cb5e0)'; // Deep Blue
+      case 'Thunderstorm': return 'linear-gradient(to bottom right, #141E30, #243B55)'; // Dark Storm
+      case 'Snow': return 'linear-gradient(to bottom right, #E0EAFC, #CFDEF3)'; // Ice White
       case 'Mist':
-      case 'Fog':
-      case 'Haze':
-        return 'linear-gradient(to bottom, #3e5151, #decba4)'; // Misty
-      default:
-        return 'linear-gradient(to top right, #74ebd5, #ACB6E5)'; // Default
+      case 'Fog': return 'linear-gradient(to bottom right, #3e5151, #decba4)'; // Misty
+      default: return 'linear-gradient(to bottom right, #74ebd5, #ACB6E5)';
     }
   };
 
+  // Helper: Get effect class
   const getEffectClass = (condition) => {
     switch (condition) {
-      case 'Thunderstorm':
-        return 'thunderstorm';
+      case 'Thunderstorm': return 'thunderstorm';
       case 'Rain':
-      case 'Drizzle':
-        return 'rain';
-      case 'Snow':
-        return 'snow';
-      case 'Clouds':
-        return 'clouds';
-      default:
-        return '';
+      case 'Drizzle': return 'rain';
+      case 'Snow': return 'snow';
+      case 'Clouds': return 'clouds';
+      default: return '';
     }
   };
 
+  // Helper: Smart Tips
+  const getSmartTips = (weatherMain, temp) => {
+    if (weatherMain === 'Rain' || weatherMain === 'Drizzle' || weatherMain === 'Thunderstorm') return "Don't forget your umbrella! It's wet outside.";
+    if (weatherMain === 'Snow') return "Bundle up! It's freezing and snowy.";
+    if (weatherMain === 'Clear' && temp > 25) return "Great day for a swim or ice cream! Stay hydrated.";
+    if (weatherMain === 'Clear' && temp < 15) return "Sunny but crisp. A light jacket is recommended.";
+    if (weatherMain === 'Clouds') return "Perfect weather for a cozy coffee or a walk.";
+    return "Enjoy your day!";
+  };
+
+  const weatherMain = hoveredWeather || forecast?.list?.[0]?.weather?.[0]?.main;
+  const currentTemp = forecast?.list?.[0]?.main?.temp;
   const currentBackground = getBackground(weatherMain);
   const effectClass = getEffectClass(weatherMain);
+  const tips = forecast ? getSmartTips(forecast.list[0].weather[0].main, forecast.list[0].main.temp) : '';
 
   return (
-    <div style={{ ...styles.page, background: currentBackground }}>
+    <div className="app-wrapper" style={{ background: currentBackground }}>
       {effectClass && <div className={`weather-effect ${effectClass}`}></div>}
-      <div style={styles.container}>
-        <h1 style={styles.title}>☀️ Weather Forecast</h1>
 
-        <div style={styles.inputSection}>
-          <input
-            type="text"
-            placeholder="Enter city"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            style={styles.input}
-          />
-          <button onClick={fetchByCity} style={styles.button}>Search</button>
-          <button onClick={fetchByLocation} style={{ ...styles.button, backgroundColor: '#6c63ff' }}>
-            Use My Location
-          </button>
-        </div>
+      <div className="main-container">
+        <header className="app-header">
+          <h1 className="logo">Weather Forecast</h1>
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Search city..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && fetchByCity()}
+            />
+            <button onClick={fetchByCity}>🔍</button>
+            <button onClick={fetchByLocation} className="loc-btn">📍</button>
+          </div>
+        </header>
 
-        {error && <p style={styles.error}>{error}</p>}
+        {error && <div className="error-msg">{error}</div>}
 
-        {forecast && forecast.city && forecast.list && (
-          <div style={styles.forecast}>
-            <h2 style={styles.subtitle}>
-              5‑Day Forecast for {forecast.city.name}, {forecast.city.country}
-            </h2>
-            <div style={styles.cardContainer}>
-              {forecast.list.filter((_, i) => i % 8 === 0).map(item => (
-                <div
-                  key={item.dt}
-                  style={styles.card}
-                  onMouseEnter={() => setHoveredWeather(item.weather[0].main)}
-                  onMouseLeave={() => setHoveredWeather(null)}
-                >
-                  <p style={styles.date}>{new Date(item.dt_txt).toLocaleDateString()}</p>
-                  <img
-                    src={`http://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
-                    alt={item.weather[0].description}
-                    style={styles.icon}
-                  />
-                  <p style={styles.temp}>{Math.round(item.main.temp)}°C</p>
-                  <p style={styles.desc}>{item.weather[0].main}</p>
+        {!forecast && !error && (
+          <div className="welcome-screen">
+            <h2>Welcome to SkyCast</h2>
+            <p>Enter a city or use your location to get started.</p>
+          </div>
+        )}
+
+        {forecast && (
+          <div className="dashboard">
+            {/* Left Column: Main Weather */}
+            <div className="current-weather-section">
+              <div className="main-card">
+                <div className="location-badge">
+                  {forecast.city.name}, {forecast.city.country}
                 </div>
-              ))}
+                <div className="temp-display">
+                  {Math.round(forecast.list[0].main.temp)}°
+                </div>
+                <div className="condition-display">
+                  {forecast.list[0].weather[0].main}
+                </div>
+                <div className="date-display">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </div>
+                <div className="smart-tip">
+                  💡 <strong>Tip:</strong> {tips}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Details & Hourly */}
+            <div className="details-section">
+
+              {/* Highlights Grid */}
+              <h3 className="section-title">Today's Highlights</h3>
+              <div className="highlights-grid">
+                <div className="highlight-card">
+                  <span className="label">Humidity</span>
+                  <span className="value">{forecast.list[0].main.humidity}%</span>
+                  <span className="status">{forecast.list[0].main.humidity > 60 ? 'High' : 'Normal'}</span>
+                </div>
+                <div className="highlight-card">
+                  <span className="label">Wind Speed</span>
+                  <span className="value">{forecast.list[0].wind.speed} m/s</span>
+                  <span className="status">Direction: {forecast.list[0].wind.deg}°</span>
+                </div>
+                <div className="highlight-card">
+                  <span className="label">Pressure</span>
+                  <span className="value">{forecast.list[0].main.pressure} hPa</span>
+                </div>
+                <div className="highlight-card">
+                  <span className="label">Visibility</span>
+                  <span className="value">{(forecast.list[0].visibility / 1000).toFixed(1)} km</span>
+                </div>
+              </div>
+
+              {/* Hourly Forecast (Next 24h - approx first 8 items) */}
+              <h3 className="section-title">Next 24 Hours</h3>
+              <div className="hourly-scroll">
+                {forecast.list.slice(0, 8).map((item, i) => (
+                  <div key={i} className="hourly-card">
+                    <p className="time">{new Date(item.dt_txt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <img
+                      src={`http://openweathermap.org/img/wn/${item.weather[0].icon}.png`}
+                      alt="icon"
+                    />
+                    <p className="temp">{Math.round(item.main.temp)}°</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* 5-Day Forecast */}
+              <h3 className="section-title">5-Day Outlook</h3>
+              <div className="daily-list">
+                {forecast.list.filter((_, i) => i % 8 === 0).map((item, i) => (
+                  <div
+                    key={item.dt}
+                    className="daily-row"
+                    onMouseEnter={() => setHoveredWeather(item.weather[0].main)}
+                    onMouseLeave={() => setHoveredWeather(null)}
+                  >
+                    <span className="day-name">{new Date(item.dt_txt).toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                    <div className="daily-icon-wrapper">
+                      <img src={`http://openweathermap.org/img/wn/${item.weather[0].icon}.png`} alt="icon" />
+                      <span>{item.weather[0].main}</span>
+                    </div>
+                    <span className="daily-temp">{Math.round(item.main.temp)}° / {Math.round(item.main.temp_min)}°</span>
+                  </div>
+                ))}
+              </div>
+
             </div>
           </div>
         )}
@@ -145,114 +212,5 @@ function App() {
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    padding: '40px 20px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    fontFamily: 'Segoe UI, sans-serif',
-    transition: 'background 0.5s ease',
-    position: 'relative',
-    overflow: 'hidden'
-  },
-  container: {
-    width: '100%',
-    maxWidth: 1200,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)', // More transparent
-    backdropFilter: 'blur(10px)', // Glassmorphism effect
-    borderRadius: 16,
-    padding: '30px 40px',
-    boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
-    zIndex: 1,
-    position: 'relative',
-    transition: 'background-color 0.3s ease'
-  },
-  title: {
-    fontSize: '2.8em',
-    marginBottom: 30,
-    color: '#333',
-    textAlign: 'center'
-  },
-  subtitle: {
-    fontSize: '1.4em',
-    marginBottom: 20,
-    color: '#333',
-    textAlign: 'center'
-  },
-  inputSection: {
-    display: 'flex',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: '15px',
-    marginBottom: 30,
-  },
-  input: {
-    padding: '12px 14px',
-    width: 240,
-    fontSize: '1em',
-    borderRadius: 6,
-    border: '1px solid #ccc',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)'
-  },
-  button: {
-    padding: '12px 18px',
-    backgroundColor: '#3498db',
-    color: '#fff',
-    border: 'none',
-    fontSize: '1em',
-    cursor: 'pointer',
-    borderRadius: 6,
-    transition: 'background-color 0.2s ease-in-out'
-  },
-  error: {
-    color: 'red',
-    textAlign: 'center',
-    fontWeight: 500
-  },
-  forecast: {
-    textAlign: 'center',
-  },
-  cardContainer: {
-    display: 'flex',
-    justifyContent: 'space-around',
-    flexWrap: 'wrap',
-    gap: '20px',
-    marginTop: 20
-  },
-  card: {
-    background: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 12,
-    padding: '20px 25px',
-    width: 180,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-    textAlign: 'center',
-    cursor: 'pointer',
-    transition: 'transform 0.2s ease, background 0.2s ease'
-  },
-  date: {
-    fontWeight: '600',
-    fontSize: '1.1em',
-    marginBottom: 10,
-    color: '#333'
-  },
-  icon: {
-    width: 64,
-    height: 64,
-    marginBottom: 10
-  },
-  temp: {
-    fontSize: '1.4em',
-    fontWeight: 'bold',
-    color: '#222'
-  },
-  desc: {
-    color: '#555',
-    fontSize: '1em',
-    fontWeight: 500
-  }
-};
 
 export default App;
