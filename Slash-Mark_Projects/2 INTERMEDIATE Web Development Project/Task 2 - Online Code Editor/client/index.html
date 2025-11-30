@@ -2,109 +2,140 @@
 <html lang="en">
 
 <head>
-    <title></title>
+    <title>Online Code Editor</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
 
-    <section spellcheck="false">
+    <div class="container">
+        <header>
+            <h1>Online Code Editor</h1>
+            <div class="controls">
+                <select id="select-lang">
+                    <option value="c">C</option>
+                    <option value="cpp">C++</option>
+                    <option value="java">Java</option>
+                    <option value="python">Python</option>
+                    <option value="js">JavaScript</option>
+                </select>
+                <button onclick="runCode()" id="runCode">
+                    <span class="play-icon">▶</span> Run Code
+                </button>
+            </div>
+        </header>
 
-        <textarea type="text" id="code" spellcheck="false" placeholder="Write Your Code Here..."></textarea>
+        <main>
+            <section class="editor-section">
+                <textarea id="code" spellcheck="false" placeholder="// Write your code here..."></textarea>
+            </section>
 
-        <div class="optionBtn">
-            <select name="code" id="select-lang" onchange="changeLanguage()">
-                <option value="c">C</option>
-                <option value="cpp">C++</option>
-                <option value="java">Java</option> <!-- New -->
-                <option value="python">Python</option> <!-- New -->
-                <option value="js">JavaScript</option>
-            </select>
-            <button onclick="runCode()" id="runCode">Run</button>
-        </div>
-
-    </section>
-
-    <div class="output">
-        <h4>Terminal (read only)</h4>
-        <div id="output"></div>
+            <section class="output-section">
+                <div class="output-header">
+                    <h4>Terminal Output</h4>
+                    <button class="clear-btn" onclick="clearOutput()">Clear</button>
+                </div>
+                <pre id="output"></pre>
+            </section>
+        </main>
     </div>
 
-</body>
+    <script>
+        const outputBox = document.getElementById('output');
+        const codeInput = document.getElementById('code');
+        const langSelect = document.getElementById('select-lang');
 
-<script>
-    let language = document.getElementById("select-lang").value;
+        // Default code snippets
+        const snippets = {
+            c: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
+            cpp: '#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}',
+            java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
+            python: 'print("Hello, World!")',
+            js: 'console.log("Hello, World!");'
+        };
 
-    function changeLanguage() {
-        language = document.getElementById("select-lang").value;
-    }
+        // Set initial snippet
+        codeInput.value = snippets[langSelect.value];
 
-    async function runCode() {
-        //get code from input
-        let submitedCode = document.querySelector("#code").value.toString();
-        submitedCode = parseCode(submitedCode);
+        langSelect.addEventListener('change', () => {
+            codeInput.value = snippets[langSelect.value];
+        });
 
-        // hit the /submission
-        let data = {
-            problemId: "1",
-            submission: {
-                language: language,
-                code: submitedCode
+        function clearOutput() {
+            outputBox.innerText = '';
+            outputBox.classList.remove('error', 'success');
+        }
+
+        async function runCode() {
+            const code = codeInput.value;
+            const language = langSelect.value;
+            const runBtn = document.getElementById('runCode');
+
+            if (!code.trim()) {
+                outputBox.innerText = "Please write some code first.";
+                return;
+            }
+
+            runBtn.disabled = true;
+            runBtn.innerText = "Running...";
+            outputBox.innerText = "Compiling and executing...";
+            outputBox.classList.remove('error', 'success');
+
+            try {
+                const response = await fetch("http://localhost:3010/submissions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        submission: {
+                            language: language,
+                            code: code
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                outputBox.innerText = data.result;
+                if (data.success) {
+                    outputBox.classList.add('success');
+                } else {
+                    outputBox.classList.add('error');
+                }
+
+            } catch (error) {
+                outputBox.innerText = "Error connecting to server. Is it running?";
+                outputBox.classList.add('error');
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = '<span class="play-icon">▶</span> Run Code';
             }
         }
-        let options = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json;charset=utf-8'
-            },
-            body: JSON.stringify(data)
-        }
-        let res = await fetch("http://localhost:3010/submissions", options);
 
-        // get the output as a response from the server
-        let output = await res.json();
+        // Enable Tab indentation in textarea
+        codeInput.addEventListener('keydown', function (e) {
+            if (e.key == 'Tab') {
+                e.preventDefault();
+                var start = this.selectionStart;
+                var end = this.selectionEnd;
 
-        // show output in the output box
-        let outputBox = document.getElementById('output');
-        outputBox.innerText = parseLogs(output.result);
+                // set textarea value to: text before caret + tab + text after caret
+                this.value = this.value.substring(0, start) +
+                    "\t" + this.value.substring(end);
 
-        // change color according to success status
-        if (output.success) {
-            outputBox.style.color = "lightgreen";
-            outputBox.scrollTop = outputBox.scrollHeight; // scroll to bottom
-        } else {
-            outputBox.style.color = "lightcoral";
-            outputBox.scrollTop = outputBox.scrollHeight; // scroll to bottom
-        }
+                // put caret at right position again
+                this.selectionStart = this.selectionEnd = start + 1;
+            }
+        });
+    </script>
 
-        // hide terminal heading
-        document.querySelector(".output h4").style.display = "none";
-    }
-
-    function parseCode(code) {
-        if (language == "c" || language == "cpp") {
-            return code.replace(/"/g, '\\"');
-        } else {
-            return code;
-        }
-    }
-
-    function parseLogs(logs) {
-        if (language == "js") {
-            return logs.replace(/\[90m/g, "... ")
-                .replace(/\[39m/g, "")
-                .replace(/\[33m/g, "");
-        } else if (language == "c" || language == "cpp") {
-            console.log("i am working")
-            return logs.replace(/\x1B\[[0-9;]*[m]/g, "")
-                .replace(/\[K/g, "");
-        } else {
-            return logs
-        }
-    }
-
-</script>
+</body>
 
 </html>
