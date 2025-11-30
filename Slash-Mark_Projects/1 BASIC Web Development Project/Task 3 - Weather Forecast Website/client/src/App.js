@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './App.css';
 
 function App() {
   const [query, setQuery] = useState('');
   const [forecast, setForecast] = useState(null);
   const [error, setError] = useState('');
+  const [hoveredWeather, setHoveredWeather] = useState(null);
 
   const fetchByCity = async () => {
     if (!query) return;
@@ -47,8 +49,53 @@ function App() {
     });
   };
 
+  // Determine weather condition (prioritize hover, then current forecast)
+  const weatherMain = hoveredWeather || forecast?.list?.[0]?.weather?.[0]?.main;
+
+  const getBackground = (condition) => {
+    switch (condition) {
+      case 'Clear':
+        return 'linear-gradient(to bottom, #2980b9, #6dd5fa, #ffffff)'; // Sunny/Clear
+      case 'Clouds':
+        return 'linear-gradient(to bottom, #bdc3c7, #2c3e50)'; // Cloudy
+      case 'Rain':
+      case 'Drizzle':
+        return 'linear-gradient(to bottom, #000046, #1cb5e0)'; // Rainy
+      case 'Thunderstorm':
+        return 'linear-gradient(to bottom, #141E30, #243B55)'; // Stormy
+      case 'Snow':
+        return 'linear-gradient(to bottom, #83a4d4, #b6fbff)'; // Snowy
+      case 'Mist':
+      case 'Fog':
+      case 'Haze':
+        return 'linear-gradient(to bottom, #3e5151, #decba4)'; // Misty
+      default:
+        return 'linear-gradient(to top right, #74ebd5, #ACB6E5)'; // Default
+    }
+  };
+
+  const getEffectClass = (condition) => {
+    switch (condition) {
+      case 'Thunderstorm':
+        return 'thunderstorm';
+      case 'Rain':
+      case 'Drizzle':
+        return 'rain';
+      case 'Snow':
+        return 'snow';
+      case 'Clouds':
+        return 'clouds';
+      default:
+        return '';
+    }
+  };
+
+  const currentBackground = getBackground(weatherMain);
+  const effectClass = getEffectClass(weatherMain);
+
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, background: currentBackground }}>
+      {effectClass && <div className={`weather-effect ${effectClass}`}></div>}
       <div style={styles.container}>
         <h1 style={styles.title}>☀️ Weather Forecast</h1>
 
@@ -75,7 +122,12 @@ function App() {
             </h2>
             <div style={styles.cardContainer}>
               {forecast.list.filter((_, i) => i % 8 === 0).map(item => (
-                <div key={item.dt} style={styles.card}>
+                <div
+                  key={item.dt}
+                  style={styles.card}
+                  onMouseEnter={() => setHoveredWeather(item.weather[0].main)}
+                  onMouseLeave={() => setHoveredWeather(null)}
+                >
                   <p style={styles.date}>{new Date(item.dt_txt).toLocaleDateString()}</p>
                   <img
                     src={`http://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
@@ -96,21 +148,27 @@ function App() {
 
 const styles = {
   page: {
-    background: 'linear-gradient(to top right, #74ebd5, #ACB6E5)',
     minHeight: '100vh',
     padding: '40px 20px',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'flex-start',
     fontFamily: 'Segoe UI, sans-serif',
+    transition: 'background 0.5s ease',
+    position: 'relative',
+    overflow: 'hidden'
   },
   container: {
     width: '100%',
     maxWidth: 1200,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)', // More transparent
+    backdropFilter: 'blur(10px)', // Glassmorphism effect
     borderRadius: 16,
     padding: '30px 40px',
     boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
+    zIndex: 1,
+    position: 'relative',
+    transition: 'background-color 0.3s ease'
   },
   title: {
     fontSize: '2.8em',
@@ -136,7 +194,8 @@ const styles = {
     width: 240,
     fontSize: '1em',
     borderRadius: 6,
-    border: '1px solid #ccc'
+    border: '1px solid #ccc',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)'
   },
   button: {
     padding: '12px 18px',
@@ -164,18 +223,20 @@ const styles = {
     marginTop: 20
   },
   card: {
-    background: '#ffffff',
+    background: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 12,
     padding: '20px 25px',
     width: 180,
     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-    textAlign: 'center'
+    textAlign: 'center',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease, background 0.2s ease'
   },
   date: {
     fontWeight: '600',
     fontSize: '1.1em',
     marginBottom: 10,
-    color: '#555'
+    color: '#333'
   },
   icon: {
     width: 64,
