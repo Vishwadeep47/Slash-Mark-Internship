@@ -3,7 +3,7 @@ const router = express.Router();
 const shortid = require('shortid');
 const validUrl = require('valid-url');
 const config = require('config');
-const Url = require('../models/Url');
+const db = require('../utils/db');
 
 // POST /api/url/shorten
 router.post('/shorten', async (req, res) => {
@@ -18,20 +18,21 @@ router.post('/shorten', async (req, res) => {
 
   if (validUrl.isUri(longUrl)) {
     try {
-      let url = await Url.findOne({ longUrl });
+      let url = db.findOne({ longUrl });
 
       if (url) {
         res.json(url);
       } else {
         const shortUrl = `${baseUrl}/${urlCode}`;
 
-        url = new Url({
+        url = {
           longUrl,
           shortUrl,
-          urlCode
-        });
+          urlCode,
+          date: new Date()
+        };
 
-        await url.save();
+        db.save(url);
         res.json(url);
       }
     } catch (err) {
@@ -44,9 +45,10 @@ router.post('/shorten', async (req, res) => {
 });
 
 // GET /:code
+// GET /:code
 router.get('/:code', async (req, res) => {
   try {
-    const url = await Url.findOne({ urlCode: req.params.code });
+    const url = db.findOne({ urlCode: req.params.code });
 
     if (url) {
       return res.redirect(url.longUrl);

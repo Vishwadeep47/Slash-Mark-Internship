@@ -1,68 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <title>URL Shortener</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkShorty - Premium URL Shortener</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: sans-serif;
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      padding-top: 50px;
-      background: #f8f9fa;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
     }
+
+    /* Background blobs */
+    .blob {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.4) 0%, rgba(168, 85, 247, 0.4) 100%);
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: -1;
+      animation: float 10s infinite ease-in-out;
+    }
+
+    .blob:nth-child(1) {
+      top: -100px;
+      left: -100px;
+    }
+
+    .blob:nth-child(2) {
+      bottom: -100px;
+      right: -100px;
+      animation-delay: 5s;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translate(0, 0);
+      }
+
+      50% {
+        transform: translate(30px, 50px);
+      }
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      padding: 3rem;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
     h1 {
-      color: #333;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(to right, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    input[type="text"] {
-      width: 400px;
-      padding: 10px;
-      font-size: 16px;
+
+    p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
     }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #007bff;
+
+    .input-group {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(0, 0, 0, 0.2);
       color: white;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 1rem;
+      border-radius: 12px;
       border: none;
+      background-color: var(--primary);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
       cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
     }
+
+    button:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
     #result {
-      margin-top: 20px;
+      margin-top: 2rem;
+      padding: 1rem;
+      border-radius: 12px;
+      background-color: rgba(255, 255, 255, 0.05);
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
-    a {
-      color: #007bff;
+
+    #result.show {
+      display: block;
+      opacity: 1;
+    }
+
+    .short-link {
+      color: #818cf8;
+      font-weight: 500;
       text-decoration: none;
+      word-break: break-all;
+      font-size: 1.1rem;
+    }
+
+    .short-link:hover {
+      text-decoration: underline;
+    }
+
+    .error {
+      color: #f87171;
     }
   </style>
 </head>
+
 <body>
-  <h1>🔗 URL Shortener</h1>
-  <input type="text" id="longUrl" placeholder="Enter long URL here" />
-  <button onclick="shortenUrl()">Shorten URL</button>
-  <div id="result"></div>
+
+  <div class="blob"></div>
+  <div class="blob"></div>
+
+  <div class="container">
+    <h1>LinkShorty</h1>
+    <p>Shorten your long links in seconds.</p>
+
+    <div class="input-group">
+      <input type="text" id="longUrl" placeholder="Paste your long URL here..." autocomplete="off">
+    </div>
+
+    <button onclick="shortenUrl()">Shorten URL ✨</button>
+
+    <div id="result"></div>
+  </div>
 
   <script>
     async function shortenUrl() {
       const longUrl = document.getElementById('longUrl').value;
       const resultDiv = document.getElementById('result');
+      const btn = document.querySelector('button');
 
-      const res = await fetch('http://localhost:5000/api/url/shorten', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ longUrl })
-      });
+      if (!longUrl) return;
 
-      const data = await res.json();
+      // Animation
+      btn.innerText = "Shortening...";
+      btn.disabled = true;
 
-      if (data.shortUrl) {
-        resultDiv.innerHTML = `<p>Short URL: <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a></p>`;
-      } else {
-        resultDiv.innerHTML = `<p style="color:red;">Error: ${data.msg || 'Invalid URL'}</p>`;
+      try {
+        const res = await fetch('http://localhost:5000/api/url/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ longUrl })
+        });
+
+        const data = await res.json();
+
+        resultDiv.className = 'show'; // Reset class
+
+        if (data.shortUrl) {
+          resultDiv.innerHTML = `
+                        <div style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Your Short Link:</div>
+                        <a href="${data.shortUrl}" target="_blank" class="short-link">${data.shortUrl}</a>
+                    `;
+          resultDiv.classList.add('show');
+        } else {
+          resultDiv.innerHTML = `<p class="error">${data.msg || 'Invalid URL'}</p>`;
+          resultDiv.classList.add('show');
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<p class="error">Server Error. Is it running?</p>`;
+        resultDiv.classList.add('show');
+      } finally {
+        btn.innerText = "Shorten URL ✨";
+        btn.disabled = false;
       }
     }
   </script>
 </body>
+
 </html>
